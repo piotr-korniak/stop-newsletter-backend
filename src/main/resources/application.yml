@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: Jan Księgowy 2.2
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: true
+        format_sql: true
+  main:
+    allow-bean-definition-overriding: true
+
+databases:
+  main:
+    datasource:
+      url: jdbc:postgresql://localhost:6543/postgres
+      username: postgres
+      password: Sylwia70
+      hikari:
+        schema: stop
+        poolName: mainDataSource
+    packages: com.stopnewsletter.backend.scene
+    liquibase:
+      changeLog: classpath:db/changelog-main.yaml
+  scene:
+    datasource:
+      url-prefix: jdbc:postgresql://localhost:6543/
+    cache:
+      maximumSize: 2
+      expireAfterAccess: 10
+    liquibase:
+      changeLog: classpath:db/changelog-scene.yaml
+

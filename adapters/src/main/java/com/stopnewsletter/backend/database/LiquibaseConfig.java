@@ -51,6 +51,8 @@ public class LiquibaseConfig {
 
     public static SpringLiquibase getSpringLiquibase( LiquibaseProperties liquibaseProperties) {
         SpringLiquibase liquibase= new SpringLiquibase();
+        System.err.println( "Liquibase: "+ liquibaseProperties.getChangeLog());
+
         liquibase.setChangeLog( liquibaseProperties.getChangeLog());
         liquibase.setContexts( liquibaseProperties.getContexts());
         liquibase.setDefaultSchema( liquibaseProperties.getDefaultSchema());

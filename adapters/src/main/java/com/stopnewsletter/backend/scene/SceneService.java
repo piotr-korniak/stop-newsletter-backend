@@ -23,7 +23,6 @@ import java.sql.SQLException;
 public class SceneService {
 
     private final SqlSceneRepository repository;
-
     private final ResourceLoader resourceLoader;
     private final JdbcTemplate jdbcTemplate;
     private final LiquibaseProperties liquibaseProperties;
@@ -48,27 +47,23 @@ public class SceneService {
         this.liquibaseProperties= liquibaseProperties;
     }
 
-    public void createScene( String code, String name) {
-        if( repository.existsByCode( code))
-            return;
-        System.err.println("Nie ma... działamy!");
+    public boolean existsByCode( String code) {
+        return repository.existsByCode( code);
+    }
 
-        // utworzenie bazy danych
-
+    public Scene createScenes( Scene scene) {
+        System.err.println( "createScenes: "+ scene.getCode());
         jdbcTemplate.execute(
-                (StatementCallback<Boolean>) stmt -> stmt.execute("CREATE DATABASE " + code));
+                (StatementCallback<Boolean>) stmt -> stmt.execute("CREATE DATABASE "+ scene.getCode()));
         jdbcTemplate.execute((StatementCallback<Boolean>) stmt -> stmt
-                .execute("GRANT ALL PRIVILEGES ON DATABASE " + code + " TO " + username));
+                .execute("GRANT ALL PRIVILEGES ON DATABASE "+ scene.getCode()+ " TO " + username));
 
-        try (Connection connection = DriverManager.getConnection(urlPrefix + code, username, password)) {
-            runLiquibase( new SingleConnectionDataSource( connection, false));
-        } catch (SQLException | LiquibaseException e) {
+        try( Connection connection= DriverManager.getConnection(urlPrefix+ scene.getCode(), username, password)) {
+            runLiquibase( new SingleConnectionDataSource(connection, false));
+        } catch ( SQLException | LiquibaseException e) {
             throw new RuntimeException( "Error when populating db: ", e);
         }
-
-        repository.save( new Scene()
-                .setCode( code)
-                .setName( name));
+        return repository.save( scene);
     }
 
     private void runLiquibase( DataSource dataSource) throws LiquibaseException {
@@ -77,4 +72,5 @@ public class SceneService {
         springLiquibase.setResourceLoader( resourceLoader);
         springLiquibase.afterPropertiesSet();
     }
+
 }

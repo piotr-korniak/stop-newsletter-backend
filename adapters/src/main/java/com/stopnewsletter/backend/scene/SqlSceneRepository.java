@@ -7,4 +7,5 @@ import java.util.UUID;
 public interface SqlSceneRepository extends JpaRepository<Scene, UUID> {
 
     boolean existsByCode( String code);
+
 }

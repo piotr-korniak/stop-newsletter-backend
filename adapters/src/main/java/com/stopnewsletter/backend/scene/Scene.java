@@ -2,6 +2,8 @@ package com.stopnewsletter.backend.scene;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.util.UUID;
@@ -9,6 +11,8 @@ import java.util.UUID;
 @Entity
 @Table( name= "SCENES")
 @Getter
+@Setter
+@Accessors( chain= true)
 public class Scene {
 
     @Id
@@ -19,14 +23,6 @@ public class Scene {
 
     private String code;
     private String name;
-
-    public Scene setCode( String code) {
-        this.code= code;
-        return this;
-    }
-    public Scene setName( String name) {
-        this.name= name;
-        return this;
-    }
+    private UUID notion;
 
 }

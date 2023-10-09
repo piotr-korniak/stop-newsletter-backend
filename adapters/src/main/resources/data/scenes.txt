@@ -1,0 +1,2 @@
+pl, Poland, eb4e0bc5-bd2f-4c86-aedb-fc759b2bd923;
+uk, United Kingdom, 4a1f8483-fb11-4d83-9135-f54e1b1c321b;

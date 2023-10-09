@@ -1,6 +1,6 @@
 spring:
   application:
-    name: Jan Księgowy 2.2
+    name: Stop Newsletter 1.0
   jpa:
     hibernate:
       ddl-auto: none
@@ -12,6 +12,7 @@ spring:
         format_sql: true
   main:
     allow-bean-definition-overriding: true
+
 
 databases:
   main:
@@ -33,4 +34,17 @@ databases:
       expireAfterAccess: 10
     liquibase:
       changeLog: classpath:db/changelog-scene.yaml
+  catalog:
+    packages: >
+      com.stopnewsletter.backend.blog,
+      com.stopnewsletter.backend.content,
+      com.stopnewsletter.backend.source
+
+notion:
+  version: 2022-06-28
+  baseUrl: api.notion.com/v1
+  authorization: M7DEsPHdt3HOkhHot9a4DwbZxwfcJRsa7MYRoasVzU
+
+
+
 

@@ -15,11 +15,14 @@ import javax.sql.DataSource;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class SceneConnectionProvider
+public class CatalogConnectionProvider
         extends AbstractDataSourceBasedMultiTenantConnectionProviderImpl {
 
     private LoadingCache<String, HikariDataSource> sceneDataSources;
     private final DataSourceProperties dataSourceProperties;
+
+    @Qualifier( "mainDataSource")
+    private final DataSource mainDataSource;
 
     @Value( "${databases.scene.datasource.url-prefix}")
     private String urlPrefix;
@@ -30,14 +33,16 @@ public class SceneConnectionProvider
     @Value( "${databases.scene.cache.expireAfterAccess:10}")
     private Integer expireAfterAccess;
 
-    public SceneConnectionProvider( @Qualifier( "mainDataSourceProperties")
-                                    DataSourceProperties dataSourceProperties) {
+    public CatalogConnectionProvider( @Qualifier( "mainDataSource")
+                                      DataSource mainDataSource,
+                                      @Qualifier( "mainDataSourceProperties")
+                                      DataSourceProperties dataSourceProperties) {
+        this.mainDataSource= mainDataSource;
         this.dataSourceProperties= dataSourceProperties;
     }
 
     @PostConstruct
     private void createCache() {
-        System.err.println( "createCache: "+ maximumSize);
 
         sceneDataSources= Caffeine.newBuilder()
                 .maximumSize( maximumSize)
@@ -52,14 +57,23 @@ public class SceneConnectionProvider
                 );
     }
 
-
-        @Override
+    @Override
     protected DataSource selectAnyDataSource() {
-        return null;
+        return mainDataSource;
     }
 
     @Override
     protected DataSource selectDataSource( String tenantIdentifier) {
         return sceneDataSources.get( tenantIdentifier);
     }
+/*
+    @Override
+    public void releaseAnyConnection( Connection connection) throws SQLException {
+        mainDataSource.getConnection().close();
+    }*/
+/*
+    @Override
+    public void releaseConnection( String tenantIdentifier, Connection connection) throws SQLException {
+        sceneDataSources.invalidate( tenantIdentifier);
+    }*/
 }

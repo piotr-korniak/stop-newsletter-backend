@@ -11,15 +11,11 @@ import java.util.UUID;
 public interface SqlSourceRepository extends JpaRepository<Source, UUID> {
 }
 
-@org.springframework.stereotype.Repository
 interface SqlSourceQueryRepository extends SourceQueryRepository, Repository<Source, UUID> {
-
-
-
 }
 
-@org.springframework.stereotype.Repository
 @AllArgsConstructor
+@org.springframework.stereotype.Repository
 class SourceRepositoryImpl implements SourceRepository {
 
     private final SqlSourceRepository repository;

@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface SourceQueryRepository {
 
-    public List<SourceDto> findTypeByActive(SourceType type);
+    public List<SourceDto> findTypeByActive( SourceType type);
 
     List<SourceDto> findAllByTypeAndActive( SourceType sourceType, Boolean aTrue);
 }

@@ -25,8 +25,8 @@ import java.util.Map;
 @EnableJpaRepositories(
        /* basePackages= { "${databases.catalog.repositories.post}",
                         "${databases.catalog.repositories.source}"},*/
-        basePackages= { "com.stopnewsletter.backend.blog",
-                        "com.stopnewsletter.backend.source"},
+        basePackages= { "com.stopnewsletter.backend.source",
+                        "com.stopnewsletter.backend.blog"},
         entityManagerFactoryRef= "catalogEntityManagerFactory",
         transactionManagerRef= "catalogTransactionManager"
 )

@@ -3,7 +3,7 @@ package com.stopnewsletter.backend.wordpress.jax;
 import lombok.Getter;
 
 @Getter
-public class WordPressCategory {
+public class WordPressAttribute {
 
     private int id;
     private String name;

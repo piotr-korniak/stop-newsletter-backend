@@ -13,8 +13,8 @@ public interface SqlCreatorRepository extends JpaRepository<Creator, UUID> {
     Optional<Creator> findByName( String name);
 }
 
-@org.springframework.stereotype.Repository
 @AllArgsConstructor
+@org.springframework.stereotype.Repository
 class CreatorRepositoryImpl implements CreatorRepository {
 
     private final SqlCreatorRepository repository;

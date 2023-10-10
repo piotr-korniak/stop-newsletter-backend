@@ -9,19 +9,19 @@ import java.util.UUID;
 
 @Getter
 @EqualsAndHashCode
-public class BlogCategoryId implements Serializable {
+public class BlogAttributeId implements Serializable {
 
     private int id;
 
-    @Column( name = "BLOG_ID")
+    @Column( name= "BLOG_ID")
     private UUID blogId;
 
-    public BlogCategoryId() {
+    public BlogAttributeId() {
     }
 
-    public BlogCategoryId( int id, UUID blogId) {
-        this.id = id;
-        this.blogId = blogId;
+    public BlogAttributeId( int id, UUID blogId) {
+        this.id= id;
+        this.blogId= blogId;
     }
 
 }

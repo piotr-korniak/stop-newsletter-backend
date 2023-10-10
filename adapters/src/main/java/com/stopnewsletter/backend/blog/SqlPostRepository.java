@@ -8,18 +8,15 @@ import org.springframework.data.repository.Repository;
 
 import java.util.UUID;
 
-public interface SqlPostRepository extends JpaRepository<Content, UUID> {
+interface SqlPostRepository extends JpaRepository<Content, UUID> {
 }
 
-@org.springframework.stereotype.Repository
-interface PostQueryRepositoryImpl extends PostQueryRepository,
+interface SqlPostQueryRepository extends PostQueryRepository,
                                             Repository<Post, UUID> {
-
 }
 
-
-@org.springframework.stereotype.Repository
 @AllArgsConstructor
+@org.springframework.stereotype.Repository
 class PostRepositoryImpl implements PostRepository {
 
     private final SqlPostRepository repository;

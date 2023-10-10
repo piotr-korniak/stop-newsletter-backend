@@ -7,21 +7,20 @@ import org.springframework.data.repository.Repository;
 
 import java.util.Optional;
 
-interface SqlBlogAuthorRepository  extends JpaRepository<BlogAuthor, BlogAuthorId> {
+interface SqlBlogAuthorRepository  extends JpaRepository<BlogAuthor, BlogAttributeId> {
 }
 
-@org.springframework.stereotype.Repository
 interface SqlBlogAuthorQueryRepository extends BlogAuthorQueryRepository,
-                                                Repository<BlogAuthor, BlogAuthorId> {
+        Repository<BlogAuthor, BlogAttributeId> {
 }
 
-@org.springframework.stereotype.Repository
 @AllArgsConstructor
+@org.springframework.stereotype.Repository
 class BlogAuthorRepositoryImpl implements BlogAuthorRepository {
 
     private final SqlBlogAuthorRepository repository;
 
-    @Override public Optional<BlogAuthor> findById( BlogAuthorId id) {
+    @Override public Optional<BlogAuthor> findById(BlogAttributeId id) {
         return repository.findById( id);
     }
 

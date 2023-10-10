@@ -5,7 +5,7 @@ import lombok.experimental.Accessors;
 
 import java.util.UUID;
 
-public interface BlogCategoryDto {
+public interface BlogAttributeDto {
     static Proxy create() {
         return new Proxy();
     }
@@ -18,7 +18,7 @@ public interface BlogCategoryDto {
 
     @Setter
     @Accessors( fluent= true, chain= true)
-    class Proxy implements BlogCategoryDto {
+    class Proxy implements BlogAttributeDto {
 
         private int id;
         private UUID blogId;

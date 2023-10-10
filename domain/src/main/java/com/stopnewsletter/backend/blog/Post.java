@@ -19,6 +19,13 @@ public class Post extends Content {
     private int postId;
 
     @ManyToMany( cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
+    @JoinTable( name= "POST_TAGS",
+            joinColumns= @JoinColumn( name= "POST_ID", referencedColumnName= "CONTENT_ID"),
+            inverseJoinColumns={ @JoinColumn( name= "TAG_ID", referencedColumnName= "ID"),
+                    @JoinColumn( name= "BLOG_ID", referencedColumnName = "BLOG_ID")})
+    private Set<BlogTag> tags= new HashSet<>();
+
+    @ManyToMany( cascade = {CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinTable( name= "POST_CATEGORIES",
             joinColumns= @JoinColumn( name= "POST_ID", referencedColumnName= "CONTENT_ID"),
             inverseJoinColumns={ @JoinColumn( name= "CATEGORY_ID", referencedColumnName= "ID"),
@@ -38,6 +45,10 @@ public class Post extends Content {
         return this;
     }
 
+    public Post setTags( Set<BlogTag> tags) {
+        this.tags= tags;
+        return this;
+    }
 
     public Post setCategories( Set<BlogCategory> categories) {
         this.categories= categories;

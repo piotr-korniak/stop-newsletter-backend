@@ -7,25 +7,24 @@ import org.springframework.data.repository.Repository;
 
 import java.util.Optional;
 
-interface SqlBlogCategoryRepository extends JpaRepository<BlogCategory, BlogCategoryId> {
-
+interface SqlBlogCategoryRepository extends JpaRepository<BlogCategory, BlogAttributeId> {
 }
 
-@org.springframework.stereotype.Repository
 interface SqlBlogCategoryQueryRepository extends BlogCategoryQueryRepository,
-                                                    Repository<BlogCategory, BlogCategoryId> {
+        Repository<BlogCategory, BlogAttributeId> {
 }
 
-@org.springframework.stereotype.Repository
 @AllArgsConstructor
+@org.springframework.stereotype.Repository
 class BlogCategoryRepositoryImpl implements BlogCategoryRepository {
 
     private final SqlBlogCategoryRepository repository;
-    @Override public BlogCategory save( BlogCategory category) {
-        return repository.save( category);
+
+    @Override public Optional<BlogCategory> findById(BlogAttributeId id) {
+        return repository.findById( id);
     }
 
-    @Override public Optional<BlogCategory> findById( BlogCategoryId id) {
-        return repository.findById( id);
+    @Override public BlogCategory save( BlogCategory category) {
+        return repository.save( category);
     }
 }

@@ -13,9 +13,10 @@ public class PostConfiguration {
     @Bean
     PostFacade postFacade(final PostRepository repository,
                           final BlogCategoryRepository blogCategories,
+                          final BlogTagRepository blogTags,
                           final SourceRepository blogs,
                           final CreatorRepository creators,
                           final BlogAuthorRepository blogAuthors) {
-        return new PostFacade( new PostFactory( blogs, blogCategories, creators, blogAuthors), repository);
+        return new PostFacade( new PostFactory( blogs, blogTags, creators, blogAuthors), repository);
     }
 }

@@ -9,7 +9,7 @@ import java.util.UUID;
 @Getter
 @Entity
 @Table( name= "BLOG_AUTHORS")
-@IdClass( BlogAuthorId.class)
+@IdClass( BlogAttributeId.class)
 public class BlogAuthor {
 
     @Id
@@ -28,7 +28,7 @@ public class BlogAuthor {
         return this;
     }
 
-    public BlogAuthor blogAuthorId ( BlogAuthorId authorId) {
+    public BlogAuthor blogAuthorId ( BlogAttributeId authorId) {
         this.id= authorId.getId();
         this.blogId= authorId.getBlogId();
         return this;

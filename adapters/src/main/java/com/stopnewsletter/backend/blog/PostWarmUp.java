@@ -5,9 +5,10 @@ import com.stopnewsletter.backend.catalog.source.SourceQueryRepository;
 import com.stopnewsletter.backend.catalog.source.dto.SourceDto;
 import com.stopnewsletter.backend.content.post.BlogAuthorQueryRepository;
 import com.stopnewsletter.backend.content.post.BlogCategoryQueryRepository;
+import com.stopnewsletter.backend.content.post.BlogTagQueryRepository;
 import com.stopnewsletter.backend.content.post.PostQueryRepository;
+import com.stopnewsletter.backend.content.post.dto.BlogAttributeDto;
 import com.stopnewsletter.backend.content.post.dto.BlogAuthorDto;
-import com.stopnewsletter.backend.content.post.dto.BlogCategoryDto;
 import com.stopnewsletter.backend.content.post.dto.PostDto;
 import com.stopnewsletter.backend.database.TenantContext;
 import com.stopnewsletter.backend.scene.SqlSceneRepository;
@@ -32,19 +33,22 @@ public class PostWarmUp implements ApplicationListener<ContextRefreshedEvent> {
 
     private final SqlSceneRepository scenes;
     private final SourceQueryRepository sources;
+    private final BlogTagQueryRepository tags;
     private final BlogCategoryQueryRepository categories;
     private final BlogAuthorQueryRepository authors;
     private final PostQueryRepository posts;
     private final SourceFacade source;
 
-    public PostWarmUp(final SqlSceneRepository scenes,
-                      final SourceQueryRepository sources,
-                      final BlogCategoryQueryRepository categories,
-                      final BlogAuthorQueryRepository authors,
-                      final PostQueryRepository posts,
-                      final SourceFacade source) {
+    public PostWarmUp( final SqlSceneRepository scenes,
+                       final BlogTagQueryRepository tags,
+                       final BlogCategoryQueryRepository categories,
+                       final BlogAuthorQueryRepository authors,
+                       final SourceQueryRepository sources,
+                       final PostQueryRepository posts,
+                       final SourceFacade source) {
         this.scenes= scenes;
         this.sources= sources;
+        this.tags= tags;
         this.categories= categories;
         this.authors= authors;
         this.posts= posts;
@@ -57,31 +61,43 @@ public class PostWarmUp implements ApplicationListener<ContextRefreshedEvent> {
         TenantContext.setCatalogId( scene);
 
         Optional.ofNullable( blog.getUpdate())
-            .map( date-> wpc.getPosts( date))
+            .map( wpc::getPosts)
             .orElse( wpc.getPosts())
             .filter( wpPost-> {
                 TenantContext.setCatalogId( scene);
                 if( posts.existsBySourceIdAndPostId( blog.getId(), wpPost.getId())){
-                    if( blog.getUpdate().before( blog.getUpdate()))
-                        source.update( blog.getId(), blog.getUpdate());
+                    if( blog.getUpdate().before( wpPost.getDate()))
+                        source.update( blog.getId(), wpPost.getDate());
                     return false;
                 }
                 return true;
             })
             .flatMap( wpPost-> {
-                System.err.println("readPost: " + wpPost.getTitle());
                 TenantContext.setCatalogId( scene);
+
+                var wpTags= Flux.fromIterable( wpPost.getTags())
+                        .flatMap( tag-> {
+                            return tags.findByIdAndBlogId( tag, blog.getId())
+                                    .map( Mono::just)
+                                    .orElse( wpc.getTag( tag)
+                                                .map( wpTag-> BlogAttributeDto.create()
+                                                    .id( wpTag.getId())
+                                                    .blogId( blog.getId())
+                                                    .name( wpTag.getName())
+                                        ));
+
+                }).collectList();
 
                 var wpCategories= Flux.fromIterable( wpPost.getCategories())
                         .flatMap( category-> {
                             //TenantContext.setCatalogId(scene);
-                            return categories.findByIdAndBlogId(category, blog.getId())
+                            return categories.findByIdAndBlogId( category, blog.getId())
                                     .map( Mono::just)
-                                    .orElse(wpc.getCategory(category)
-                                            .map(wpCategory -> BlogCategoryDto.create()
-                                                    .id(wpCategory.getId())
-                                                    .blogId(blog.getId())
-                                                    .name(wpCategory.getName())
+                                    .orElse( wpc.getCategory( category)
+                                                .map( wpCategory-> BlogAttributeDto.create()
+                                                    .id( wpCategory.getId())
+                                                    .blogId( blog.getId())
+                                                    .name( wpCategory.getName())
                                             ));
                         }).collectList();
 
@@ -97,15 +113,15 @@ public class PostWarmUp implements ApplicationListener<ContextRefreshedEvent> {
                                                     .name(wpUser.getName())));
                         });
 
-                return Mono.zip( wpCategories, wpAuthor)
+                return Mono.zip( wpTags, wpCategories, wpAuthor)
                         .map( wp-> {
                             //System.err.println("Author: " + wp.getT2().getName());
                             TenantContext.setCatalogId( scene);
-                            savePost(blog, wpPost, wp.getT1(), wp.getT2());
+                            savePost( blog, wpPost, wp.getT1(), wp.getT2(), wp.getT3());
                             return Mono.empty();
                         });
             })
-            .subscribeOn(Schedulers.boundedElastic())
+            .subscribeOn( Schedulers.boundedElastic())
             .subscribe();
 
     }
@@ -114,10 +130,8 @@ public class PostWarmUp implements ApplicationListener<ContextRefreshedEvent> {
 
         scenes.findAll().forEach( scene-> {
             TenantContext.setCatalogId( scene.getCode());
-            sources.findAllByTypeAndActive( SourceType.WP, Boolean.TRUE).forEach( blog-> {
-
-                readBlog( scene.getCode(), WordPressClient.create( blog.getUrl()), blog);
-            });
+            sources.findAllByTypeAndActive( SourceType.WP, Boolean.TRUE)
+                    .forEach( blog-> readBlog( scene.getCode(), WordPressClient.create( blog.getUrl()), blog));
         });
 /*
        for( Scene scene: scenes.findAll()) {
@@ -175,7 +189,8 @@ public class PostWarmUp implements ApplicationListener<ContextRefreshedEvent> {
     @Transactional
     public void savePost( SourceDto blog,
                           WordPressPost wpPost,
-                          List<BlogCategoryDto> blogCategories,
+                          List<BlogAttributeDto> blogTags,
+                          List<BlogAttributeDto> blogCategories,
                           BlogAuthorDto blogAuthor) {
 
         source.addPost( PostDto.create()
@@ -183,6 +198,7 @@ public class PostWarmUp implements ApplicationListener<ContextRefreshedEvent> {
                 .blog( blog)
                 .title( wpPost.getTitle())
                 .date( wpPost.getDate())
+                .tags( blogTags)
                 .categories( blogCategories)
                 .author( List.of( blogAuthor)));
     }

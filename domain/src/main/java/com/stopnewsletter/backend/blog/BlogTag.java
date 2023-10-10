@@ -7,27 +7,27 @@ import java.util.UUID;
 
 @Getter
 @Entity
-@Table( name= "BLOG_CATEGORIES")
+@Table( name= "BLOG_TAGS")
 @IdClass( BlogAttributeId.class)
-public class BlogCategory {
+public class BlogTag {
 
     @Id
     private int id;
 
     @Id
-    @Column( name= "BLOG_ID")
+    @Column(name = "BLOG_ID")
     private UUID blogId;
 
     private String name;
 
-    public BlogCategory name( String name) {
+    public BlogTag name( String name) {
         this.name= name;
         return this;
     }
 
-    public BlogCategory blogCategoryId ( BlogAttributeId categoryId) {
-        this.id= categoryId.getId();
-        this.blogId= categoryId.getBlogId();
+    public BlogTag blogTagId( BlogAttributeId tagId) {
+        this.id= tagId.getId();
+        this.blogId= tagId.getBlogId();
         return this;
     }
 }

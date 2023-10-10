@@ -28,7 +28,7 @@ public class SourceFacade {
 
     public void update( UUID sourceId, Date update) {
         sources.findById( sourceId)
-                .ifPresent( source-> sources.save( source).setUpdate( update));
+                .ifPresent( source-> sources.save( source.setUpdate( update)));
     }
 
     public void addPost( PostDto postDto) {

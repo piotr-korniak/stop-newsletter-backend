@@ -1,6 +1,6 @@
 package com.stopnewsletter.backend.wordpress;
 
-import com.stopnewsletter.backend.wordpress.jax.WordPressCategory;
+import com.stopnewsletter.backend.wordpress.jax.WordPressAttribute;
 import com.stopnewsletter.backend.wordpress.jax.WordPressPost;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -42,20 +42,30 @@ public class WordPressClient {
                 .retrieve()
                 .bodyToFlux( WordPressPost.class);
     }
+    public Mono<WordPressAttribute> getTag( int tag) {
+        return webClient
+                .get()
+                .uri( "wp-json/wp/v2/tags/"+ tag)
+                .retrieve()
+                .bodyToMono( WordPressAttribute.class);
+    }
 
-    public Mono<WordPressCategory> getCategory( int category) {
+
+    public Mono<WordPressAttribute> getCategory(int category) {
         return webClient
                 .get()
                 .uri( "wp-json/wp/v2/categories/"+ category)
                 .retrieve()
-                .bodyToMono( WordPressCategory.class);
+                .bodyToMono( WordPressAttribute.class);
     }
 
-    public Mono<WordPressCategory> getUser( int user) {
+
+    public Mono<WordPressAttribute> getUser(int user) {
         return webClient
                 .get()
                 .uri( "wp-json/wp/v2/users/"+ user)
                 .retrieve()
-                .bodyToMono( WordPressCategory.class);
+                .bodyToMono( WordPressAttribute.class);
     }
+
 }

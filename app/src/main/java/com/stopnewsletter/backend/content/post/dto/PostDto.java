@@ -15,8 +15,8 @@ public interface PostDto {
 
     public PostId getId();
     public SourceDto getBlog();
-    public List<BlogAttributeDto> getTags();
-    public List<BlogAttributeDto> getCategories();
+    public List<BlogTagDto> getTags();
+    public List<BlogCategoryDto> getCategories();
     public String getTitle();
     public List<BlogAuthorDto> getAuthors();
     public Date getDate();
@@ -27,8 +27,8 @@ public interface PostDto {
 
         private PostId postId;
         private SourceDto blog;
-        private List<BlogAttributeDto> tags;
-        private List<BlogAttributeDto> categories;
+        private List<BlogTagDto> tags;
+        private List<BlogCategoryDto> categories;
         private String title;
         private List<BlogAuthorDto> author;
         private Date date;
@@ -41,10 +41,10 @@ public interface PostDto {
             return blog;
         }
 
-        @Override public List<BlogAttributeDto> getTags() {
-            return categories;
+        @Override public List<BlogTagDto> getTags() {
+            return tags;
         }
-        @Override public List<BlogAttributeDto> getCategories() {
+        @Override public List<BlogCategoryDto> getCategories() {
             return categories;
         }
 

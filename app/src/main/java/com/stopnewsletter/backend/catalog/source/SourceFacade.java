@@ -1,5 +1,6 @@
 package com.stopnewsletter.backend.catalog.source;
 
+import com.stopnewsletter.backend.blog.Post;
 import com.stopnewsletter.backend.catalog.source.dto.SourceDto;
 import com.stopnewsletter.backend.content.post.PostFacade;
 import com.stopnewsletter.backend.content.post.dto.PostDto;
@@ -31,14 +32,13 @@ public class SourceFacade {
                 .ifPresent( source-> sources.save( source.setUpdate( update)));
     }
 
-    public void addPost( PostDto postDto) {
-        sources.findById( postDto.getBlog().getId())
-            .ifPresent( blog-> {
-                post.save( blog, postDto);
-
+    public Optional<Post> addPost(PostDto postDto) {
+        return sources.findById( postDto.getBlog().getId())
+            .map( blog-> {
                 if( Optional.ofNullable( blog.getUpdate()).isEmpty() ||
                         postDto.getDate().after( blog.getUpdate()))     // update
                     sources.save( blog.setUpdate( postDto.getDate()));
+                return post.save( blog, postDto);
             });
     }
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table( name= "POSTS")
@@ -55,8 +56,12 @@ public class Post extends Content {
         return this;
     }
 
-    public Post setCreators( Set<BlogAuthor> authors) {
+    public Post setAuthors(Set<BlogAuthor> authors) {
         this.authors= authors;
+        setCreators( authors.stream()
+                .map( author-> author.getCreator()).collect( Collectors.toSet()));
         return this;
     }
+
+
 }

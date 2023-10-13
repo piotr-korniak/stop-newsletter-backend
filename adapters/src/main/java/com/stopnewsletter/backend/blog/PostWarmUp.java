@@ -7,15 +7,14 @@ import com.stopnewsletter.backend.content.post.BlogAuthorQueryRepository;
 import com.stopnewsletter.backend.content.post.BlogCategoryQueryRepository;
 import com.stopnewsletter.backend.content.post.BlogTagQueryRepository;
 import com.stopnewsletter.backend.content.post.PostQueryRepository;
-import com.stopnewsletter.backend.content.post.dto.BlogAttributeDto;
+import com.stopnewsletter.backend.content.post.dto.BlogCategoryDto;
+import com.stopnewsletter.backend.content.post.dto.BlogTagDto;
 import com.stopnewsletter.backend.content.post.dto.BlogAuthorDto;
 import com.stopnewsletter.backend.content.post.dto.PostDto;
 import com.stopnewsletter.backend.database.TenantContext;
 import com.stopnewsletter.backend.scene.SqlSceneRepository;
 import com.stopnewsletter.backend.source.SourceType;
 import com.stopnewsletter.backend.wordpress.WordPressClient;
-import com.stopnewsletter.backend.wordpress.jax.WordPressPost;
-import jakarta.transaction.Transactional;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.annotation.Order;
@@ -24,6 +23,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,12 +57,21 @@ public class PostWarmUp implements ApplicationListener<ContextRefreshedEvent> {
         this.posts= posts;
         this.source= source;
     }
+
+    @Override
+    public void onApplicationEvent( ContextRefreshedEvent event) {
+
+        scenes.findAll().forEach( scene-> {
+            TenantContext.setCatalogId( scene.getCode());
+            sources.findAllByTypeAndActive( SourceType.WP, Boolean.TRUE)
+                    .forEach( blog-> readBlog( scene.getCode(), WordPressClient.create( blog.getUrl()), blog));
+        });
+
+    }
+
     private void readBlog( String scene, WordPressClient wpc, SourceDto blog){
 
-        System.err.println( "readBlog: "+ blog.getUrl());
-
         TenantContext.setCatalogId( scene);
-
         Optional.ofNullable( blog.getUpdate())
             .map( wpc::getPosts)
             .orElse( wpc.getPosts())
@@ -75,133 +87,93 @@ public class PostWarmUp implements ApplicationListener<ContextRefreshedEvent> {
             .flatMap( wpPost-> {
                 TenantContext.setCatalogId( scene);
 
-                var wpTags= Flux.fromIterable( wpPost.getTags())
-                        .flatMap( tag-> {
-                            return tags.findByIdAndBlogId( tag, blog.getId())
-                                    .map( Mono::just)
-                                    .orElse( wpc.getTag( tag)
-                                                .map( wpTag-> BlogAttributeDto.create()
-                                                    .id( wpTag.getId())
-                                                    .blogId( blog.getId())
-                                                    .name( wpTag.getName())
-                                        ));
+                var file= new Object(){ String extension="";};
+                var wpMedia= wpc.getMedia( wpPost.getMedia())
+                   .flatMap( wordPressMedia-> {
+                       file.extension= wordPressMedia.getFileExtension();
+                       return wpc.getImage( wordPressMedia.getUrl());
+                   });
 
-                }).collectList();
+                var wpTags= Flux.fromIterable( wpPost.getTags())
+                    .flatMap( tag-> {
+                        return tags.findByIdAndBlogId( tag, blog.getId())
+                            .map( Mono::just)
+                                .orElse( wpc.getTag( tag)
+                                            .map( wpTag-> BlogTagDto.create()
+                                                .id( wpTag.getId())
+                                                .blogId( blog.getId())
+                                                .name( wpTag.getName())
+                                            ));
+                    }).collectList();
 
                 var wpCategories= Flux.fromIterable( wpPost.getCategories())
-                        .flatMap( category-> {
-                            //TenantContext.setCatalogId(scene);
-                            return categories.findByIdAndBlogId( category, blog.getId())
-                                    .map( Mono::just)
-                                    .orElse( wpc.getCategory( category)
-                                                .map( wpCategory-> BlogAttributeDto.create()
-                                                    .id( wpCategory.getId())
-                                                    .blogId( blog.getId())
-                                                    .name( wpCategory.getName())
+                    .flatMap( category-> {
+                        return categories.findByIdAndBlogId( category, blog.getId())
+                            .map( Mono::just)
+                                .orElse( wpc.getCategory( category)
+                                            .map( wpCategory-> BlogCategoryDto.create()
+                                                .id( wpCategory.getId())
+                                                .blogId( blog.getId())
+                                                .name( wpCategory.getName())
                                             ));
-                        }).collectList();
+                    }).collectList();
 
-                var wpAuthor= Mono.just(wpPost.getAuthor())
-                        .flatMap(author -> {
-                            //TenantContext.setCatalogId(scene);
-                            return authors.findByIdAndBlogId(author, blog.getId())
-                                    .map(Mono::just)
-                                    .orElse(wpc.getUser(author)
-                                            .map(wpUser -> BlogAuthorDto.create()
-                                                    .id(wpUser.getId())
-                                                    .blogId(blog.getId())
-                                                    .name(wpUser.getName())));
-                        });
+                var wpAuthor= Optional.ofNullable( wpPost.getAuthor().getName())
+                    .map( author-> Mono.just( (BlogAuthorDto)BlogAuthorDto.create()
+                                                .id( wpPost.getAuthor().getId())
+                                                .name( wpPost.getAuthor().getName())
+                                                .blogId( blog.getId())))
+                    .orElse( authors.findByIdAndBlogId( wpPost.getAuthor().getId(), blog.getId())
+                        .map( Mono::just)
+                        .orElse( wpc.getUser( wpPost.getAuthor().getId())
+                                .map( wpUser-> BlogAuthorDto.create()
+                                                .id( wpUser.getId())
+                                                .blogId( blog.getId())
+                                                .name( wpUser.getName())))
+                        .onErrorResume( throwable -> {
+                            return Mono.just( BlogAuthorDto.create()
+                                                .id( wpPost.getAuthor().getId())
+                                                .blogId( blog.getId())
+                                                .name( "<< hidden name >>"));
+                    }));
 
-                return Mono.zip( wpTags, wpCategories, wpAuthor)
-                        .map( wp-> {
-                            //System.err.println("Author: " + wp.getT2().getName());
-                            TenantContext.setCatalogId( scene);
-                            savePost( blog, wpPost, wp.getT1(), wp.getT2(), wp.getT3());
-                            return Mono.empty();
-                        });
+                return Mono.zip( wpTags, wpCategories, wpAuthor, wpMedia)
+                    .map( wp-> {
+                        TenantContext.setCatalogId( scene);
+                        source.addPost( PostDto.create()
+                                        .postId( new PostId( wpPost.getId(), blog.getId()))
+                                        .blog( blog)
+                                        .title( wpPost.getTitle())
+                                        .date( wpPost.getDate())
+                                        .tags( wp.getT1())
+                                        .categories( wp.getT2())
+                                        .author( List.of( wp.getT3())))
+                                .ifPresent( post->  saveImage( wp.getT4(),
+                                        blog.getId()+ "/"+ post.getId()+ file.extension)
+                                        .subscribe());
+                        return Mono.empty();
+                    });
             })
             .subscribeOn( Schedulers.boundedElastic())
             .subscribe();
-
     }
-    @Override
-    public void onApplicationEvent( ContextRefreshedEvent event) {
 
-        scenes.findAll().forEach( scene-> {
-            TenantContext.setCatalogId( scene.getCode());
-            sources.findAllByTypeAndActive( SourceType.WP, Boolean.TRUE)
-                    .forEach( blog-> readBlog( scene.getCode(), WordPressClient.create( blog.getUrl()), blog));
+    private Mono<Void> saveImage(byte[] imageBytes, String savePath) {
+        Path filePath= new File( "D:/Dane/Stop/"+ savePath).toPath();
+
+        return Mono.fromCallable(()-> {
+            try {
+                Files.createDirectories( filePath.getParent());
+                Files.write( filePath, imageBytes);
+            } catch (IOException e) {
+                throw new RuntimeException( "Error while saving the file: " + e.getMessage());
+            }
+            return null;
         });
-/*
-       for( Scene scene: scenes.findAll()) {
-           TenantContext.setCatalogId( scene.getCode());
-           for( SourceDto blog: sources.findTypeByActive( SourceType.WP)) { // only WP
-               if( !blog.isActive())
-                   continue;
-
-               var wordPress= WordPressClient.create( blog.getUrl());
-               wordPress.getPosts()
-                   .flatMap( wpPost-> {
-                       var wpCategories= Flux.fromIterable( wpPost.getCategories())
-                               .flatMap( category->{
-                                   TenantContext.setCatalogId( scene.getCode());
-                                   return categories.findByIdAndBlogId( category, blog.getId())
-                                           .map( Mono::just)
-                                           .orElse( wordPress.getCategory( category)
-                                                   .map( wpCategory-> BlogCategoryDto.create()
-                                                           .id( wpCategory.getId())
-                                                           .blogId( blog.getId())
-                                                           .name( wpCategory.getName())
-                                                   ));
-                                   }).collectList();
-
-                       var wpAuthor= wordPress.getUser( wpPost.getAuthor())
-                               .map( wpUser-> BlogAuthorDto.create()
-                                       .id( wpUser.getId())
-                                       .blogId( blog.getId())
-                                       .name( wpUser.getName()));
-
-                       return Mono.zip( Mono.just( wpPost), wpCategories, wpAuthor).map( wp-> {
-
-                           System.err.println( "Author: "+ wp.getT3().getName());
-
-                           return savePost( blog, wp.getT1(), wp.getT2(), wp.getT3());
-
-                       });
-
-                       return Mono.zip( Mono.just( wpPost), wpCategories, (post, categories)-> {
-                                    TenantContext.setCatalogId( scene.getCode());
-                                    return posts.save( PostDto.create()
-                                            .postId( new PostId( post.getId(), blog.getId()))
-                                            .blog( blog)
-                                            .title( post.getTitle())
-                                            .categories( categories));
-                               });
-                   }).subscribe();
-
-           }
-       }*/
     }
 
 
 
-    @Transactional
-    public void savePost( SourceDto blog,
-                          WordPressPost wpPost,
-                          List<BlogAttributeDto> blogTags,
-                          List<BlogAttributeDto> blogCategories,
-                          BlogAuthorDto blogAuthor) {
-
-        source.addPost( PostDto.create()
-                .postId( new PostId( wpPost.getId(), blog.getId()))
-                .blog( blog)
-                .title( wpPost.getTitle())
-                .date( wpPost.getDate())
-                .tags( blogTags)
-                .categories( blogCategories)
-                .author( List.of( blogAuthor)));
-    }
 
 
 }

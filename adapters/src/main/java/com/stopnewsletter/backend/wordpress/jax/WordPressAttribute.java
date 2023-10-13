@@ -8,11 +8,13 @@ public class WordPressAttribute {
     private int id;
     private String name;
 
-    public void setId( int id){
+    public WordPressAttribute setId( int id){
         this.id= id;
+        return this;
     }
 
-    public void setName( String name){
+    public WordPressAttribute setName( String name){
         this.name= name;
+        return this;
     }
 }

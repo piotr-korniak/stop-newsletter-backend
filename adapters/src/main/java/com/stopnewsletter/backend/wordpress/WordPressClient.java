@@ -1,6 +1,7 @@
 package com.stopnewsletter.backend.wordpress;
 
 import com.stopnewsletter.backend.wordpress.jax.WordPressAttribute;
+import com.stopnewsletter.backend.wordpress.jax.WordPressMedia;
 import com.stopnewsletter.backend.wordpress.jax.WordPressPost;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -59,8 +60,7 @@ public class WordPressClient {
                 .bodyToMono( WordPressAttribute.class);
     }
 
-
-    public Mono<WordPressAttribute> getUser(int user) {
+    public Mono<WordPressAttribute> getUser( int user) {
         return webClient
                 .get()
                 .uri( "wp-json/wp/v2/users/"+ user)
@@ -68,4 +68,19 @@ public class WordPressClient {
                 .bodyToMono( WordPressAttribute.class);
     }
 
+    public Mono<WordPressMedia> getMedia( int media) {
+        return webClient
+                .get()
+                .uri( "wp-json/wp/v2/media/"+ media)
+                .retrieve()
+                .bodyToMono( WordPressMedia.class);
+    }
+
+    public Mono<byte[]> getImage(String path) {
+        return webClient
+                .get()
+                .uri( path)
+                .retrieve()
+                .bodyToMono( byte[].class);
+    }
 }
